@@ -80,25 +80,25 @@
         ]
       }
     ],
-    "PreCommit": [
-      {
-        "type": "command",
-        "command": "# Pre-commit checks for Solana projects\nset -e\n\necho \"🔍 Running pre-commit checks...\"\n\n# Check if it's a Solana program\nif [ -f \"Anchor.toml\" ] || grep -q \"solana-program\" Cargo.toml 2>/dev/null; then\n  echo \"  📝 Checking Rust format...\"\n  cargo fmt --check 2>/dev/null || {\n    echo \"  ⚠️  Format issues found. Running cargo fmt...\"\n    cargo fmt\n    exit 1\n  }\n\n  echo \"  🔎 Running clippy...\"\n  cargo clippy --all-targets -- -D warnings 2>/dev/null || {\n    echo \"  ⚠️  Clippy warnings found. Please fix before committing.\"\n    exit 1\n  }\n\n  echo \"  🧪 Running quick tests...\"\n  cargo test --lib 2>/dev/null || {\n    echo \"  ⚠️  Unit tests failed. Please fix before committing.\"\n    exit 1\n  }\nfi\n\n# Check if it's a frontend project\nif [ -f \"package.json\" ]; then\n  if command -v prettier >/dev/null 2>&1 || command -v npx >/dev/null 2>&1; then\n    echo \"  📝 Checking TypeScript format...\"\n    npx prettier --check \"**/*.{ts,tsx,js,jsx,json}\" 2>/dev/null || {\n      echo \"  ⚠️  Format issues found. Running prettier...\"\n      npx prettier --write \"**/*.{ts,tsx,js,jsx,json}\"\n      exit 1\n    }\n  fi\n\n  if [ -f \"tsconfig.json\" ]; then\n    echo \"  🔎 Type checking...\"\n    npx tsc --noEmit 2>/dev/null || {\n      echo \"  ⚠️  Type errors found. Please fix before committing.\"\n      exit 1\n    }\n  fi\nfi\n\necho \"✅ Pre-commit checks passed!\""
-      }
-    ],
-    "PreDeploy": [
-      {
-        "when": {
-          "command_matches": "anchor deploy|solana program deploy"
-        },
-        "hooks": [
-          {
-            "type": "command",
-            "command": "# Pre-deployment safety checks\nset -e\n\necho \"\"\necho \"🚨 PRE-DEPLOYMENT SAFETY CHECKS\"\necho \"================================\"\n\n# Check current network\nCURRENT_NETWORK=$(solana config get | grep \"RPC URL\" | awk '{print $3}')\necho \"Network: $CURRENT_NETWORK\"\n\nif echo \"$CURRENT_NETWORK\" | grep -q \"mainnet\"; then\n  echo \"\"\n  echo \"⚠️  WARNING: Deploying to MAINNET!\"\n  echo \"This will cost real SOL and is IRREVERSIBLE.\"\n  echo \"\"\n  echo \"Pre-deployment checklist:\"\n  echo \"  - All tests passing?\"\n  echo \"  - Security audit completed?\"\n  echo \"  - Verifiable build tested?\"\n  echo \"  - Devnet testing successful?\"\n  echo \"\"\n  echo \"Type 'DEPLOY TO MAINNET' to confirm (or Ctrl+C to cancel):\"\n  read -r confirmation\n  if [ \"$confirmation\" != \"DEPLOY TO MAINNET\" ]; then\n    echo \"Deployment cancelled.\"\n    exit 1\n  fi\nelse\n  echo \"✅ Deploying to $CURRENT_NETWORK (safe)\"\nfi\n\n# Verify build is recent\nif [ -f \"Anchor.toml\" ]; then\n  if [ ! -f \"target/deploy/\"*.so ]; then\n    echo \"❌ No program binary found. Run 'anchor build' first.\"\n    exit 1\n  fi\n  \n  BINARY_AGE=$(($(date +%s) - $(stat -f %m target/deploy/*.so 2>/dev/null || stat -c %Y target/deploy/*.so)))\n  if [ $BINARY_AGE -gt 3600 ]; then\n    echo \"⚠️  Program binary is over 1 hour old. Consider rebuilding.\"\n  fi\nfi\n\necho \"\"\necho \"✅ Pre-deployment checks complete. Proceeding...\"\necho \"\""
-          }
-        ]
-      }
-    ]
+    "PreCommit": {
+      "hooks": [
+        {
+          "type": "command",
+          "command": "# Pre-commit checks for Solana projects\nset -e\n\necho \"🔍 Running pre-commit checks...\"\n\n# Check if it's a Solana program\nif [ -f \"Anchor.toml\" ] || grep -q \"solana-program\" Cargo.toml 2>/dev/null; then\n  echo \"  📝 Checking Rust format...\"\n  cargo fmt --check 2>/dev/null || {\n    echo \"  ⚠️  Format issues found. Running cargo fmt...\"\n    cargo fmt\n    exit 1\n  }\n\n  echo \"  🔎 Running clippy...\"\n  cargo clippy --all-targets -- -D warnings 2>/dev/null || {\n    echo \"  ⚠️  Clippy warnings found. Please fix before committing.\"\n    exit 1\n  }\n\n  echo \"  🧪 Running quick tests...\"\n  cargo test --lib 2>/dev/null || {\n    echo \"  ⚠️  Unit tests failed. Please fix before committing.\"\n    exit 1\n  }\nfi\n\n# Check if it's a frontend project\nif [ -f \"package.json\" ]; then\n  if command -v prettier >/dev/null 2>&1 || command -v npx >/dev/null 2>&1; then\n    echo \"  📝 Checking TypeScript format...\"\n    npx prettier --check \"**/*.{ts,tsx,js,jsx,json}\" 2>/dev/null || {\n      echo \"  ⚠️  Format issues found. Running prettier...\"\n      npx prettier --write \"**/*.{ts,tsx,js,jsx,json}\"\n      exit 1\n    }\n  fi\n\n  if [ -f \"tsconfig.json\" ]; then\n    echo \"  🔎 Type checking...\"\n    npx tsc --noEmit 2>/dev/null || {\n      echo \"  ⚠️  Type errors found. Please fix before committing.\"\n      exit 1\n    }\n  fi\nfi\n\necho \"✅ Pre-commit checks passed!\""
+        }
+      ]
+    },
+    "PreDeploy": {
+      "when": {
+        "command_matches": "anchor deploy|solana program deploy"
+      },
+      "hooks": [
+        {
+          "type": "command",
+          "command": "# Pre-deployment safety checks\nset -e\n\necho \"\"\necho \"🚨 PRE-DEPLOYMENT SAFETY CHECKS\"\necho \"================================\"\n\n# Check current network\nCURRENT_NETWORK=$(solana config get | grep \"RPC URL\" | awk '{print $3}')\necho \"Network: $CURRENT_NETWORK\"\n\nif echo \"$CURRENT_NETWORK\" | grep -q \"mainnet\"; then\n  echo \"\"\n  echo \"⚠️  WARNING: Deploying to MAINNET!\"\n  echo \"This will cost real SOL and is IRREVERSIBLE.\"\n  echo \"\"\n  echo \"Pre-deployment checklist:\"\n  echo \"  - All tests passing?\"\n  echo \"  - Security audit completed?\"\n  echo \"  - Verifiable build tested?\"\n  echo \"  - Devnet testing successful?\"\n  echo \"\"\n  echo \"Type 'DEPLOY TO MAINNET' to confirm (or Ctrl+C to cancel):\"\n  read -r confirmation\n  if [ \"$confirmation\" != \"DEPLOY TO MAINNET\" ]; then\n    echo \"Deployment cancelled.\"\n    exit 1\n  fi\nelse\n  echo \"✅ Deploying to $CURRENT_NETWORK (safe)\"\nfi\n\n# Verify build is recent\nif [ -f \"Anchor.toml\" ]; then\n  if [ ! -f \"target/deploy/\"*.so ]; then\n    echo \"❌ No program binary found. Run 'anchor build' first.\"\n    exit 1\n  fi\n  \n  BINARY_AGE=$(($(date +%s) - $(stat -f %m target/deploy/*.so 2>/dev/null || stat -c %Y target/deploy/*.so)))\n  if [ $BINARY_AGE -gt 3600 ]; then\n    echo \"⚠️  Program binary is over 1 hour old. Consider rebuilding.\"\n  fi\nfi\n\necho \"\"\necho \"✅ Pre-deployment checks complete. Proceeding...\"\necho \"\""
+        }
+      ]
+    }
   },
   "modelDefaults": {
     "agent": "opus",
